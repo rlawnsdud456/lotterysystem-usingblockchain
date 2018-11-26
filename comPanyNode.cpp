@@ -15,9 +15,6 @@
 
 using namespace std;
 
-comPanyNode::comPanyNode(time_t finish1):Node(finish1," "){
+comPanyNode::comPanyNode(time_t finish1,int portNumber,bool isCompany):Node(finish1," ",portNumber,isCompany){
 }
 
-Blockchain comPanyNode::getChain(){
-    return thisChain;
-}

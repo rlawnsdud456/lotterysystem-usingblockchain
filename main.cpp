@@ -18,149 +18,163 @@
 #include <iostream>
 #include "NodeNetWork.hpp"
 #include "genesisBlock.hpp"
-#define comPanyNodePort 5003
+#include "util.hpp"
+#include "NodeClient.hpp"
+#include "NodeServer.hpp"
+#include <pthread.h>
+
+#define comPanyNodePort 1012
 using namespace std;
 
 time_t finishtime;
 int portNumber;
-unsigned long getValue(string s){
-    unsigned long result = 0;
-    int k = 16 * 16 * 16 * 16 * 16;
-    for(int i = 0 ; i < 7; i++){
-        char temp = s[i];
-        
-        switch (temp) {
-            case 'a':
-                result += 10 * k;
-                break;
-            case 'b':
-                result +=11 * k;
-                break;
-            case 'c':
-                result +=12 * k;
-                break;
-            case 'd':
-                result +=13 * k;
-                break;
-            case 'e':
-                result +=14 * k;
-                break;
-            case 'f':
-                result +=15 * k;
-                break;
-            default:
-                int tempi = (int)temp - 48;
-                result += tempi * k;
-                break;
-        }
-         k /= 16;
-    }
-    return result;
+bool created = false;
+void* comPanyWait(void* arg){
+    NodeServer server1 = (NodeServer) *((NodeServer*) arg);
+    server1.CompanyWaitForListen(finishtime);
+    printf("bbbb\n");
 }
+
+void* listenNodeMain(void* arg){
+    NodeServer server1 = (NodeServer) *((NodeServer*) arg);
+    server1.NodeWaitForListen();
+}
+
+void* requestNode(void* arg){
+    //printf("1111I will request connect to\n");
+
+    NodeClient nodec = (NodeClient) *((NodeClient*) arg);
+    char* serverIp = "127.0.0.1";
+    
+    nodec.ownNode->checkDataUsing(true);
+    int temp = nodec.ownNode->portPoolQueue.front();
+    nodec.ownNode->portPoolQueue.pop();
+    if(temp == nodec.ownNode->portNumber) {
+        printf("!!!!!!!!!size:%d\n", temp);
+        temp = nodec.ownNode->portPoolQueue.front();
+        nodec.ownNode->portPoolQueue.pop();
+        printf("!!!!!!!!!size:%d\n", temp);
+    }
+    if(!nodec.ownNode->portPoolQueueHas(nodec.ownNode->portPoolQueue,temp))nodec.ownNode->portPoolQueue.push(temp);
+    
+    nodec.ownNode->checkDataUsing(false);
+    
+   // printf("I will request connect to %d\n", temp);
+    nodec.connectToPort(nodec.ownNode->portNumber,temp,serverIp);
+    created = false;
+    nodec.ownNode->lock = false;
+}
+
 int main(int argc, char *argv[]){
     int temp;
-    //cout << "for companyNode type 0 else anything" << endl;
-    //cin >> temp;
     
-    //NodeNetWork network = NodeNetWork(0,&Node(finishtime,"123"));
-    finishtime = time(NULL) + 50;
+    finishtime = time(NULL) + 80;
     if(atoi(argv[1]) == 0){
+        vector<string> temp;
+        genesisBlock genesis = genesisBlock(temp);
         
         portNumber = comPanyNodePort;
-        comPanyNode tempCompany = comPanyNode(finishtime);
-        NodeNetWork network = NodeNetWork(portNumber,tempCompany);
+        comPanyNode tempCompany = comPanyNode(finishtime,portNumber,true);
+        tempCompany.ownChain.setGenesisBlock(genesis);
+        printf("chain size: %d\n", tempCompany.ownChain._vChain.size());
         
-        while(time(NULL) <= finishtime){
-            network.CompanyWaitForListen(finishtime);
-            for(int i = 0;i<tempCompany.portPool.size();i++){
-                cout << tempCompany.portPool[i] << endl;
-            }
-            
-        }
-        //cout << tempCompany.getChain().getGenesisBlock().getCondition() << endl;
+        NodeServer server = NodeServer(portNumber,tempCompany);
+        pthread_t pid[3];
+        cout << tempCompany.getFinishTime() << endl;
+        int status = pthread_create(&pid[0], NULL, &comPanyWait,&server);
+        int status2 = pthread_create(&pid[1], NULL, &listenNodeMain,&server);
+
+        pthread_join(pid[0], NULL);
+        pthread_join(pid[1], NULL);
+
+        printf("aaaa\n");
     }
     else{
         portNumber = atoi(argv[2]);
-        Node node = Node(finishtime,to_string(portNumber+1));
-        node.portPool.emplace_back(comPanyNodePort);
-        //Node* nodepointer = &node;
-        NodeNetWork network = NodeNetWork(portNumber,node);
-        printf("Redo%d\n",node.participantsPool.size());
+        Node node = Node(finishtime, to_string(portNumber+1),portNumber,false);
+        
+        NodeServer server = NodeServer(portNumber,node);
 
-        network.initializeFromCompany(comPanyNodePort);
-       // printf("Redo%s\n",node.participantsPool[0].c_str());
-       
-       // while(time(NULL)<= finishtime){
-            printf("Redo%d\n",node.participantsPool.size());
-            if(portNumber%2==0)network.nodeWaitForListen();
-            else {
-                network.nodeRequestNode(portNumber-1);
-                cout << "Let's Look at initialization" << endl;
-                for(int i = 0;i<node.portPool.size();i++){
-                    cout << node.portPool[i] << endl;
-                }
-                for(int i = 0; i<node.participantsPool.size(); i++){
-                    cout << node.participantsPool[i] << endl;
-                }
-                printf("end\n");
+        pthread_t pid[3];
+
+        int status = pthread_create(&pid[0], NULL, &listenNodeMain,&server);
+
+        node.lock = true;
+        int poolsi = 0;
+
+        NodeClient nodeclient = NodeClient(portNumber,comPanyNodePort,node,true);
+        finishtime = node.getFinishTime();
+
+        while(time(NULL)+10 < finishtime){
+ 
+            printf("running\n");
+
+            sleep(5);
+            node.checkDataUsing(true);
+            for(int i = 0; i<node.participantsPool.size();i++){
+                cout << "I have parti: " << node.participantsPool[i] << endl;
             }
-            printf("##\n");
+            if(time(NULL)>node.getFinishTime()-30 && node.participantsPool.size()>=1){
+                printf("Let's mine rest!!\n");
+                bool yes = node.mineTheBlock();
+                printf("Minded? %d\n", node.ownChain.getLength());
+            }
+            if(node.participantsPool.size() >=3){
+                printf("Let's mine!!\n");
+                bool yes = node.mineTheBlock();
+                printf("Minded? %d\n", node.ownChain.getLength());
+            }
+            node.checkDataUsing(false);
 
-        //}
-       
+            if(node.lock == false){
+                
+                if(!node.portPoolQueue.empty()){
+                    node.lock = true;
+                    created = true;
+                    pthread_create(&pid[1], NULL, &requestNode,&nodeclient);
+                }
+            }
+            finishtime = node.getFinishTime();
+        }
+        while(time(NULL)+10 < finishtime){}
+        
+        pthread_kill(pid[1], NULL);
+        node.checkDataUsing(false);
+        Blockchain tempchain = node.ownChain;
+        Block tempBlock = tempchain.getBlock(0);
+
+        int chainsize = tempchain.getLength();
+        cout << "mynumber: " << node.getOwnPhoneNumber().c_str() << endl;
+        string ss;
+        for(int h = 0 ; h < chainsize;h++){
+            tempBlock = tempchain.getBlock(h);
+            int size = tempBlock.getParticiSize();
+            cout << "Block hash is: " << tempBlock.CalculateHash() << endl;
+            ss += tempBlock.CalculateHash();
+            for(int k = 0; k < size; k++){
+                cout << "Block "  << h << " has: " <<tempBlock.participantsVector[k] << endl;
+            }
+            printf("\n");
+        }
+        ss = sha256(ss);
+        string winner;
+        unsigned long criValue= getValue(ss);
+        cout << "criteria is: " << ss << "value: " << criValue << endl;
+        
+        unsigned long minn = 99999999;
+        for(int h = 0; h < chainsize; h++){
+            tempBlock = tempchain.getBlock(h);
+            int size = tempBlock.getParticiSize();
+            for(int k = 0; k < size; k++){
+                if(minn> labs(criValue - getValue(tempBlock.participantsVector[k]))) {
+                    winner = tempBlock.participantsVector[k];
+                    minn = labs(criValue - getValue(tempBlock.participantsVector[k]));
+                }
+            }
+        }
+        bool iam = winner == node.getOwnPhoneNumber();
+        cout << "winner is " << winner << " Iam? " << iam << endl;
+                
     }
-    
-    
 }
-/*int main(){
-    Blockchain bChain = Blockchain();
-    finishtime = bChain.getCreatedTime() + 6;
-    int k =1;
-    cout << time(NULL) << " " <<finishtime<<endl;
-    while(time(NULL)<=finishtime){
-        //cout << "Mining block " << k <<"..." <<endl;
-        //bChain.AddBlock(Block(k, "Block"+to_string(k) + "Data"),finishtime);
-        if(k==1){
-            string phone = to_string(rand() % 32767 + k);
-            nodePool.emplace_back(Node(finishtime,phone,5000+k));
-            participantsPool.emplace_back(nodePool.back().getOwnPhoneNumber());
-            k++;
-        }
-        else if(k==2){
-            string phone = to_string(rand() % 32767 + k);
-            nodePool.emplace_back(Node(finishtime,phone,5000+k));
-            participantsPool.emplace_back(nodePool.back().getOwnPhoneNumber());
-            k++;
-            
-        }
-    }
-    
-    string ss;
-    for(int i = 0; i< bChain.getLength(); i++){
-        ss = ss + bChain.getBlock(i).getHash();
-    }
-    string criteria = sha256(ss);
-    cout << criteria << " " << getValue(criteria) << endl;
-    
-    unsigned long l;
-    int winner = -1;
-    unsigned int winner_difference = 999999999;
-    unsigned long criteriaValue = getValue(criteria);
-    for(int i =0; i< bChain.getLength(); i++){
-        l = getValue(bChain.getBlock(i).getNumberValue());
-        cout <<bChain.getBlock(i).getNumberValue() << " " << l<<endl;
-        long temp = l - criteriaValue;
-        if(labs(temp) <= winner_difference){
-            if(labs(temp) == winner_difference){
-                cout << "same" << i  << endl;
-            }
-            else {
-                winner = i;
-                cout << winner << endl;
-            }
-            
-            winner_difference = labs(temp);
-        }
-    }
-    return 0;
-}*/
+

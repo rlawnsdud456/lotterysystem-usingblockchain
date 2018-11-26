@@ -10,9 +10,10 @@
 
 using namespace std;
 
-genesisBlock::genesisBlock():Block(0,""){
+genesisBlock::genesisBlock(vector<string>& temp):Block(0,temp,""){
 }
 
 std::string genesisBlock::getCondition(){
     return conditionOfWinning;
 }
+

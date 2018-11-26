@@ -13,25 +13,35 @@
 #include <vector>
 #include <time.h>
 #include "Block.hpp"
+#include <unordered_map>
 #include "genesisBlock.hpp"
+#include "util.hpp"
 
 using namespace std;
 
 class Blockchain{
 public:
+    Blockchain(genesisBlock genesis);
     Blockchain();
     
-    void AddBlock(Block bNew,time_t finish);
+    unordered_map<unsigned long, string> participants_hash;
     time_t getCreatedTime();
+    vector<Block> _vChain;
+
+    bool setGenesisBlock(genesisBlock genesis);
+    void MineBlock(Block bNew,time_t finish);
     int getLength();
+    bool addBlock(Block nBlock);
+    bool checkParticipants(std::string it);
+    bool checkValidBlock(Block nBlock, int nDifficulty);
+    void copyChain(Blockchain newChain);
+    
+    uint32_t getDifficulty();
     Block getBlock(int i);
     Block getLastBlock() const;
     genesisBlock getGenesisBlock();
-
 private:
     uint32_t _nDifficulty;
-    vector<Block> _vChain;
-    time_t createdTime;
-    genesisBlock genesis;
+    
 };
 #endif /* Blockchain_hpp */

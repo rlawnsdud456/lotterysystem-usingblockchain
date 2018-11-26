@@ -16,10 +16,11 @@ private:
     const std::string conditionOfWinning = "The 1st gets $1000";
     
 public:
-    genesisBlock();
+    genesisBlock(std::vector<std::string>& temp);
     std::string getCondition();
-    
-    
+    void setCreatedTime(time_t temp){
+        Block::setCreatedTime(temp);
+    }
 };
 
 #endif /* genesisBlock_hpp */

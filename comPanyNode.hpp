@@ -22,10 +22,7 @@
 
 class comPanyNode: public Node{
 public:
-    comPanyNode(time_t finish1);
-    Blockchain getChain();
-private:
-    Blockchain thisChain;
+    comPanyNode(time_t finish1,int portNumber,bool isCompany);
 };
 
 #endif /* comPanyNode_hpp */
