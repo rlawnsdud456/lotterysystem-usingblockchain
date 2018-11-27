@@ -35,13 +35,14 @@ public:
     bool checkParticipants(std::string it);
     bool checkValidBlock(Block nBlock, int nDifficulty);
     void copyChain(Blockchain newChain);
-    
+    string getWinnerCondition();
     uint32_t getDifficulty();
     Block getBlock(int i);
     Block getLastBlock() const;
     genesisBlock getGenesisBlock();
 private:
     uint32_t _nDifficulty;
+    string condition;
     
 };
 #endif /* Blockchain_hpp */

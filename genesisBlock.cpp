@@ -10,7 +10,7 @@
 
 using namespace std;
 
-genesisBlock::genesisBlock(vector<string>& temp):Block(0,temp,""){
+genesisBlock::genesisBlock(vector<string>& temp):Block(0,temp,conditionOfWinning_const){
 }
 
 std::string genesisBlock::getCondition(){

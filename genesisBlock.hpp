@@ -8,6 +8,8 @@
 #ifndef genesisBlock_hpp
 #define genesisBlock_hpp
 
+#define conditionOfWinning_const "The 1st gets $1000"
+
 #include <stdio.h>
 #include "Block.hpp"
 

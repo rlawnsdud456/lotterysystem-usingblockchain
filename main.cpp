@@ -16,7 +16,6 @@
 #include "Node.hpp"
 #include "comPanyNode.hpp"
 #include <iostream>
-#include "NodeNetWork.hpp"
 #include "genesisBlock.hpp"
 #include "util.hpp"
 #include "NodeClient.hpp"
@@ -32,12 +31,13 @@ bool created = false;
 void* comPanyWait(void* arg){
     NodeServer server1 = (NodeServer) *((NodeServer*) arg);
     server1.CompanyWaitForListen(finishtime);
-    printf("bbbb\n");
+    printf("Company server close\n");
 }
 
 void* listenNodeMain(void* arg){
     NodeServer server1 = (NodeServer) *((NodeServer*) arg);
     server1.NodeWaitForListen();
+    printf("Node server close\n");
 }
 
 void* requestNode(void* arg){
@@ -50,16 +50,14 @@ void* requestNode(void* arg){
     int temp = nodec.ownNode->portPoolQueue.front();
     nodec.ownNode->portPoolQueue.pop();
     if(temp == nodec.ownNode->portNumber) {
-        printf("!!!!!!!!!size:%d\n", temp);
         temp = nodec.ownNode->portPoolQueue.front();
         nodec.ownNode->portPoolQueue.pop();
-        printf("!!!!!!!!!size:%d\n", temp);
     }
     if(!nodec.ownNode->portPoolQueueHas(nodec.ownNode->portPoolQueue,temp))nodec.ownNode->portPoolQueue.push(temp);
     
     nodec.ownNode->checkDataUsing(false);
     
-   // printf("I will request connect to %d\n", temp);
+    printf("Request connect to %d\n", temp);
     nodec.connectToPort(nodec.ownNode->portNumber,temp,serverIp);
     created = false;
     nodec.ownNode->lock = false;
@@ -68,8 +66,9 @@ void* requestNode(void* arg){
 int main(int argc, char *argv[]){
     int temp;
     
-    finishtime = time(NULL) + 80;
+    finishtime = time(NULL) + 180;
     if(atoi(argv[1]) == 0){
+        if(argc==3) finishtime = time(NULL) + atoi(argv[2]);
         vector<string> temp;
         genesisBlock genesis = genesisBlock(temp);
         
@@ -87,9 +86,13 @@ int main(int argc, char *argv[]){
         pthread_join(pid[0], NULL);
         pthread_join(pid[1], NULL);
 
-        printf("aaaa\n");
+        printf("Company Close\n");
     }
     else{
+        
+        printf("start Initialize\n");
+        sleep(6);
+        
         portNumber = atoi(argv[2]);
         Node node = Node(finishtime, to_string(portNumber+1),portNumber,false);
         
@@ -104,17 +107,22 @@ int main(int argc, char *argv[]){
 
         NodeClient nodeclient = NodeClient(portNumber,comPanyNodePort,node,true);
         finishtime = node.getFinishTime();
-
-        while(time(NULL)+10 < finishtime){
+        
+        time_t temprest = ( finishtime - time(NULL) ) / 3;
+        if(temprest < 30) temprest = 30;
+        
+        while(time(NULL)+16 < finishtime){
  
             printf("running\n");
-
             sleep(5);
             node.checkDataUsing(true);
+            if(!node.participantsPoolHas(node.getOwnPhoneNumber()))
+                node.participantsPool.push_back(node.getOwnPhoneNumber());
+
             for(int i = 0; i<node.participantsPool.size();i++){
                 cout << "I have parti: " << node.participantsPool[i] << endl;
             }
-            if(time(NULL)>node.getFinishTime()-30 && node.participantsPool.size()>=1){
+            if(time(NULL)>node.getFinishTime()-temprest && node.participantsPool.size()>=1){
                 printf("Let's mine rest!!\n");
                 bool yes = node.mineTheBlock();
                 printf("Minded? %d\n", node.ownChain.getLength());
@@ -136,14 +144,15 @@ int main(int argc, char *argv[]){
             }
             finishtime = node.getFinishTime();
         }
-        while(time(NULL)+10 < finishtime){}
-        
-        pthread_kill(pid[1], NULL);
+        pthread_join(pid[0],NULL);
+        //while(time(NULL)+10 < finishtime){}
         node.checkDataUsing(false);
+        pthread_kill(pid[1], NULL);
         Blockchain tempchain = node.ownChain;
         Block tempBlock = tempchain.getBlock(0);
 
         int chainsize = tempchain.getLength();
+        printf("\n");
         cout << "mynumber: " << node.getOwnPhoneNumber().c_str() << endl;
         string ss;
         for(int h = 0 ; h < chainsize;h++){
@@ -174,7 +183,9 @@ int main(int argc, char *argv[]){
         }
         bool iam = winner == node.getOwnPhoneNumber();
         cout << "winner is " << winner << " Iam? " << iam << endl;
-                
+        if(iam){
+            cout << "The condition of winning is: " << tempchain.getWinnerCondition().c_str() << endl;
+        }
     }
 }
 

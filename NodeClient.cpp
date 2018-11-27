@@ -111,7 +111,7 @@ int NodeClient::connectToPort(int portNumber,int receiverPort, char *serverIp){
     }
 
     int chainSize = ownNode->ownChain.getLength();
-    //printf("I have %d size of chain\n", chainSize);
+    printf("I have %d size of chain\n", chainSize);
     write(sockfd,&chainSize,4);
     read(sockfd,&buf,4);
     //printf("In client get %d\n", buf);
@@ -127,7 +127,7 @@ int NodeClient::connectToPort(int portNumber,int receiverPort, char *serverIp){
     }
     
     if(buf==1){
-        //printf("start sending block information\n");
+        printf("start sending block information\n");
         
         Block tempBLock = ownNode->ownChain.getBlock(0);
         
@@ -165,7 +165,7 @@ int NodeClient::connectToPort(int portNumber,int receiverPort, char *serverIp){
 
     // receive response
     ownNode->lock = false;
-    //printf("in client end:%d\n",receiverPort);
+    printf("in client request end:%d\n",receiverPort);
     return sockfd;
 }
 
@@ -190,6 +190,7 @@ NodeClient::NodeClient(int portNumber,int receiverPort,Node& node,bool company){
     servaddr.sin_port = htons(receiverPort);
     int temp = receiverPort;
     if(company){
+        printf("start Initialize\n");
         connect(sockfd, (struct sockaddr *)&servaddr, strlen);
 
         buf = INITIALIZE;
@@ -275,6 +276,8 @@ NodeClient::NodeClient(int portNumber,int receiverPort,Node& node,bool company){
         ownNode->checkDataUsing(false);
         
         ownNode->lock = false;
+        printf("end Initialize\n");
+
     }
 }
 

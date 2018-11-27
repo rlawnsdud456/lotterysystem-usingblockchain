@@ -10,6 +10,7 @@
 Blockchain:: Blockchain(genesisBlock genesis){
     _vChain.emplace_back(genesis);
     _nDifficulty = 3;
+    condition = genesis.getCondition();
 }
 
 Blockchain:: Blockchain(){
@@ -19,9 +20,14 @@ Blockchain:: Blockchain(){
 bool Blockchain::setGenesisBlock(genesisBlock genesis){
     if(_vChain.size() == 0 ){
         _vChain.emplace_back(genesis);
+        condition = genesis.getCondition();
         return true;
     }
     return false;
+}
+
+string Blockchain::getWinnerCondition(){
+    return condition;
 }
 
 

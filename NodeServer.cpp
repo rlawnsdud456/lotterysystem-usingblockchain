@@ -223,11 +223,13 @@ void NodeShakeHandReceive(void *arg,int sock,int portNumber){
                 read(accp_sock,&buff[0],65);
                 
                 temp = buff;
-                if(temp == noddd->ownChain.getLastBlock().CalculateHash()){
+                if(getValue(temp) > getValue(noddd->ownChain.getLastBlock().CalculateHash())){
+                    buf = 1;
+                }
+                else {
                     buf = -1;
                     chainSize = -1;
                 }
-                else buf = 1;
             }
             else {
                 buf = -1;
@@ -301,7 +303,7 @@ void NodeShakeHandReceive(void *arg,int sock,int portNumber){
 
             for(int i = 0; i < checkPool; i++,it++){
                 if(noddd->ownChain.checkParticipants(noddd->participantsPool[it])) {
-                    printf("erase %s \n", noddd->participantsPool[it].c_str());
+                    //printf("erase %s \n", noddd->participantsPool[it].c_str());
                     noddd->participantsPool.erase(noddd->participantsPool.begin()+it);
                     it--;
                 }
@@ -313,7 +315,7 @@ void NodeShakeHandReceive(void *arg,int sock,int portNumber){
 
     close(accp_sock);
     noddd->portQueue.push(portNumber);
-    //printf("serverside end\n");
+    printf("serverside end\n");
 }
 
 void *companyShakeHandReceive(void *arg,int sock,int portNumber){
