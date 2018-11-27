@@ -21,8 +21,9 @@
 #include "NodeClient.hpp"
 #include "NodeServer.hpp"
 #include <pthread.h>
+#include <signal.h>
 
-#define comPanyNodePort 1012
+#define comPanyNodePort 11012
 using namespace std;
 
 time_t finishtime;

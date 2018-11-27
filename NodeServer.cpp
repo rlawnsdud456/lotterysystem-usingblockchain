@@ -14,26 +14,26 @@
 
 void *companyShakeHandReceive(void *arg,int sock,int portNumber); //shakeHand with non-companyNode
 void NodeShakeHandReceive(void *arg,int sock,int portNumber);
-void *listen(void *arg);
+static void *listen(void *arg);
 void *listenNode(void* arg);
 int bindTo(int portNumber);
 
-int result = 0;
-int cntNum = 0; //client count
-struct sockaddr_in servaddr, cliaddr;
-int  accp_sock[THREAD_NUM];
-socklen_t addrlen = sizeof(servaddr);
-int i, status ;
-pthread_t tid[10];
-pid_t pid;
-int myPort,portBuf = -1;
-Node* noddd;
-bool lockCreate = false;
-bool listening1 = false;
-bool listening2 = false;
+static int result = 0;
+static int cntNum = 0; //client count
+static struct sockaddr_in servaddr, cliaddr;
+static int  accp_sock[THREAD_NUM];
+static socklen_t addrlen = sizeof(servaddr);
+static int i, status ;
+static pthread_t tid[10];
+static pid_t pid;
+static int myPort,portBuf = -1;
+static Node* noddd;
+static bool lockCreate = false;
+static bool listening1 = false;
+static bool listening2 = false;
 
 //mutex
-pthread_mutex_t lock1 = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t lock1 = PTHREAD_MUTEX_INITIALIZER;
 
 int bindTo(int portNumber){
     printf("created %d\n", portNumber);
@@ -92,7 +92,7 @@ int NodeServer::NodeWaitForListen(){
     return portBuf;
 }
 
-void* listen(void *arg){
+static void* listen(void *arg){
     cntNum++;
 
     int portNumber = (int) *((int*) arg);

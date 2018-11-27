@@ -4,7 +4,7 @@
 //
 //  Created by Mac on 08/11/2018.
 //
-
+#include <signal.h>
 #include "NodeNetWork.hpp"
 
 
@@ -17,25 +17,25 @@
 #define THREAD_NUM 5 //클라이언 동시 접속 수
 void *companyShakeHandReceive(void *arg); //shakeHand with non-companyNode
 void *nodeShakeHandReceive(void *arg);
-void *listen(void *arg);
+static void *listen(void *arg);
 void *Nodelisten(void *arg);
 void *checkKill(void *arg);
 void *checkKillNode(void *arg);
 int connectToPort(int port, char* serverIp);
 
-int result = 0;
-int cntNum = 0; //client count
-struct sockaddr_in servaddr, cliaddr;
-int listen_sock, accp_sock[THREAD_NUM];
-socklen_t addrlen = sizeof(servaddr);
-int i, status ;
-pthread_t tid[10];
-pid_t pid;
-int myPort,portBuf = -1;
-Node* noddd;
+static int result = 0;
+static int cntNum = 0; //client count
+static struct sockaddr_in servaddr, cliaddr;
+static int listen_sock, accp_sock[THREAD_NUM];
+static socklen_t addrlen = sizeof(servaddr);
+static int i, status ;
+static pthread_t tid[10];
+static pid_t pid;
+static int myPort,portBuf = -1;
+static Node* noddd;
 
 //mutex
-pthread_mutex_t lock1 = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t lock1 = PTHREAD_MUTEX_INITIALIZER;
 bool checkHasS(vector<std::string> vect, std::string it){
     for(int i = 0; i<vect.size(); i++){
         if(vect[i] == it){
@@ -232,7 +232,7 @@ void* checkKill(void *arg){
         printf("111\n");
     }
 }
-void* listen(void *arg){
+static void* listen(void *arg){
     while(time(NULL)<= noddd->getFinishTime()){
         listen(listen_sock, LISTENQ);
         //if(time(NULL)>=finish) close(listen_sock);
