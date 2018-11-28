@@ -43,7 +43,7 @@ public:
     bool portPoolQueueHas(std::queue<int> temp,int it);
     bool participantsPoolHas(std::string it);
     void checkParticipants();
-    bool dataUsing;
+    bool dataUsing = false;
 private:
     time_t finishTime;
     time_t createdNodeTime;

@@ -191,8 +191,12 @@ NodeClient::NodeClient(int portNumber,int receiverPort,Node& node,bool company){
     int temp = receiverPort;
     if(company){
         printf("start Initialize\n");
-        connect(sockfd, (struct sockaddr *)&servaddr, strlen);
-
+        int status = connect(sockfd, (struct sockaddr *)&servaddr, strlen);
+        printf("client connect to companyServer get %d \n", status);
+        if(status < 0 ) {
+            printf("initialize fail\n");
+            exit(0);
+        }
         buf = INITIALIZE;
         //Initialize from company
         write(sockfd,&buf,4); // sendInitialize

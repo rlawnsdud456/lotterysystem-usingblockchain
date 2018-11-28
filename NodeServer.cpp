@@ -31,9 +31,7 @@ static Node* noddd;
 static bool lockCreate = false;
 static bool listening1 = false;
 static bool listening2 = false;
-
-//mutex
-static pthread_mutex_t lock1 = PTHREAD_MUTEX_INITIALIZER;
+bool bindFail = false;
 
 int bindTo(int portNumber){
     printf("created %d\n", portNumber);
@@ -52,7 +50,8 @@ int bindTo(int portNumber){
     if(::bind(listen_sock1, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
         printf("bindFail%d\n", portNumber);
         perror("bind Fail");
-        exit(0);
+        bindFail = true;
+        return -1;
     }
     lockCreate = false;
     return listen_sock1;
@@ -66,8 +65,11 @@ int NodeServer::CompanyWaitForListen(time_t finish){
     noddd->portQueue.pop();
     if((status = pthread_create(&tid[0], NULL, &listen,&portNum))!=0){
         printf("%d thread create error: %s\n", cntNum, strerror(status));
+        return -1;
     }
-            
+    
+    sleep(1);
+    if(bindFail) return -1;
     while(time(NULL)+10 < noddd->getFinishTime() ){}
     pthread_exit(NULL);
     //printf("inserver1 %d: %d\n",tempcntNum);
@@ -84,8 +86,11 @@ int NodeServer::NodeWaitForListen(){
     noddd->portQueue.pop();
     if((status = pthread_create(&tid[tempcntNum], NULL, &listenNode,&portNum))!=0){
         printf("%d thread create error: %s\n", cntNum, strerror(status));
+        return -1;
         }
-            
+    
+    sleep(1);
+    if(bindFail) return -1;
     while(time(NULL)+10 < noddd->getFinishTime() ){}
     pthread_exit(NULL);
     //}
@@ -97,6 +102,7 @@ static void* listen(void *arg){
 
     int portNumber = (int) *((int*) arg);
     int listen_sock = bindTo(portNumber);
+    if(listen_sock < 0 ) return 0;
     while(time(NULL)+10<= noddd->getFinishTime()){
 
         if(!listening1){
@@ -119,6 +125,7 @@ static void* listen(void *arg){
 void* listenNode(void *arg){
     int portNumber = (int) *((int*) arg);
     int listen_sock = bindTo(portNumber);
+    if(listen_sock < 0 ) return 0;
     cntNum++;
 
     while(time(NULL)+10<= noddd->getFinishTime()){
@@ -136,14 +143,15 @@ void* listenNode(void *arg){
             //printf("fifi %ld %ld \n", time(NULL),noddd->getFinishTime());
             listening2 = false;
         }
-        
     }
+    return 0;
 }
 void NodeShakeHandReceive(void *arg,int sock,int portNumber){
     int accp_sock = (int) *((int*) arg);
     int buf;
     noddd->checkDataUsing(true);
-
+    
+    printf("node receiver hand start\n");
     read(accp_sock, &buf, 4); //INITIALIZE ?
     if(buf == INTERACTNODE){
 
@@ -185,7 +193,6 @@ void NodeShakeHandReceive(void *arg,int sock,int portNumber){
             string kkk = noddd->participantsPool[i];
             write(accp_sock,kkk.c_str(),65);
         }
-        requesterPoolsize;
         read(accp_sock,&requesterPoolsize,4);
         for(int i = 0; i < requesterPoolsize; i++){
             char buff[65];
@@ -345,7 +352,7 @@ void *companyShakeHandReceive(void *arg,int sock,int portNumber){
         int forPortpool;
         read(accp_sock,&forPortpool,4); //client portNumber
         
-        //printf("company get INITIALIZE signal with portNumber:%d\n",forPortpool);
+        printf("company get INITIALIZE signal with portNumber:%d\n",forPortpool);
         buf = myPort;
         time_t finish = noddd->getFinishTime();
         
@@ -409,6 +416,7 @@ void *companyShakeHandReceive(void *arg,int sock,int portNumber){
     }
     close(accp_sock);
     noddd->portQueue.push(portNumber);
+    return 0;
 }
 
 NodeServer::NodeServer(int port,Node& node) {
