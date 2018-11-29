@@ -122,6 +122,7 @@ int main(int argc, char *argv[]){
         pthread_t pid[3];
         cout << tempCompany.getFinishTime() << endl;
         int status = pthread_create(&pid[0], NULL, &comPanyWait,&server);
+        sleep(1);
         int status2 = pthread_create(&pid[1], NULL, &listenNodeMain,&server);
         
         sleep(1);
@@ -176,7 +177,6 @@ int main(int argc, char *argv[]){
             
             printf("running\n");
             sleep(5);
-            node.checkDataUsing(true);
             if(!node.participantsPoolHas(node.getOwnPhoneNumber()))
                 node.participantsPool.push_back(node.getOwnPhoneNumber());
             
@@ -185,15 +185,18 @@ int main(int argc, char *argv[]){
             }
             if(time(NULL)>node.getFinishTime()-temprest && node.participantsPool.size()>=1){
                 printf("Let's mine rest!!\n");
+                node.checkDataUsing(true);
                 bool yes = node.mineTheBlock();
+                node.checkDataUsing(false);
                 printf("Minded? %d\n", node.ownChain.getLength());
             }
             if(node.participantsPool.size() >=3){
                 printf("Let's mine!!\n");
+                node.checkDataUsing(true);
                 bool yes = node.mineTheBlock();
+                node.checkDataUsing(false);
                 printf("Minded? %d\n", node.ownChain.getLength());
             }
-            node.checkDataUsing(false);
             
             if(node.lock == false){
                 
